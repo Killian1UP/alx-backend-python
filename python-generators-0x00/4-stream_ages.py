@@ -25,5 +25,5 @@ def calculate_average_age():
     else:
         print("No users found.")
         
-if __name__ == '__main__':
-    calculate_average_age()
+# if __name__ == '__main__':
+#     calculate_average_age()
