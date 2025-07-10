@@ -19,7 +19,7 @@ class DatabaseConnection:
             
 with DatabaseConnection('users.db') as conn:
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM USERS")
+    cursor.execute("SELECT * FROM users")
     users = cursor.fetchall()
     
     print("Users:")
