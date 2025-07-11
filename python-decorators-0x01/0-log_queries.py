@@ -29,16 +29,20 @@ def setup_database():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            email TEXT NOT NULL
+            email TEXT NOT NULL,
+            age INTEGER NOT NULL
         )
     ''')
 
     cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        cursor.executemany("INSERT INTO users (name, email) VALUES (?, ?)", [
-            ('Ikaelelo', 'ika@email.com'),
-            ('Lesedi', 'lesedi@email.com'),
-            ('Jane', 'jane@email.com')
+        cursor.executemany("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", [
+            ('Ikaelelo', 'ika@email.com', 26),
+            ('Lesedi', 'lesedi@email.com', 23),
+            ('Jane', 'jane@email.com', 40),
+            ('Patrick', 'pat@email.com', 63),
+            ('Constance', 'constance@email.com', 58),
+            ('Itumeleng', 'itu@email.com', 35)
         ])
     conn.commit()
     conn.close()
