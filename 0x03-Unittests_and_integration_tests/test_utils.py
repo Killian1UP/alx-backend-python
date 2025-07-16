@@ -23,7 +23,10 @@ class TestAccessNestedMap(unittest.TestCase):
     def test_access_nested_map_exception(self, nested_map, path, expected_key):
         with self.assertRaises(KeyError) as cm:
             access_nested_map(nested_map, path)
-        self.assertEqual(str(cm.exception), f"'{expected_key}'")
+        self.assertEqual(
+            str(cm.exception),
+            f"'{expected_key}'"
+            )
 
 
 class TestGetJson(unittest.TestCase):
@@ -64,4 +67,3 @@ class TestMemoize(unittest.TestCase):
             self.assertEqual(first, 42)
             self.assertEqual(second, 42)
             mock_method.assert_called_once()
-
