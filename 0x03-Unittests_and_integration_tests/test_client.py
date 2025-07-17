@@ -7,7 +7,9 @@ import unittest
 from unittest.mock import patch, PropertyMock
 from parameterized import parameterized
 from parameterized import parameterized_class
-from client import GithubOrgClient
+from client import (
+    GithubOrgClient
+)
 from itertools import cycle
 
 # Move this to the bottom to avoid ImportError if fixtures aren't found at runtime
