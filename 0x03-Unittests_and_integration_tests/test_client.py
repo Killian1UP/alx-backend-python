@@ -79,7 +79,7 @@ class TestGithubOrgClient(unittest.TestCase):
         "expected": expected_repos,
         "apache2": apache2_repos,
 }])
-class TestIntegrationGithubOrgClient(unittest.TestCase):
+class TestIntegrationGithubOrgClient_0(unittest.TestCase):
     """Integration test for GithubOrgClient.public_repos()."""
     
     
