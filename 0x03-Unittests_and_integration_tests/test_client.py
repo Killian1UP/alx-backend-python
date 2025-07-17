@@ -9,6 +9,7 @@ from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
 from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 import requests
+from itertools import cycle
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -87,12 +88,10 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     def setUpClass(cls):
         cls.get_patcher = patch("requests.get")
         mock_get = cls.get_patcher.start()         
-        mock_get.return_value.json.side_effect = [
+        mock_get.return_value.json.side_effect = cycle([
            cls.org_payload,
            cls.repos_payload,
-           cls.org_payload,
-           cls.repos_payload,
-        ]
+        ])
         
     
     @classmethod
