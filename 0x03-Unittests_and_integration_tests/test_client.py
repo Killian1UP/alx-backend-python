@@ -5,7 +5,10 @@ Unit tests for GithubOrgClient class in client.py.
 
 import unittest
 from unittest.mock import patch, PropertyMock
-from parameterized import parameterized, parameterized_class
+from parameterized import (
+    parameterized, 
+    parameterized_class
+)
 from client import GithubOrgClient
 import requests
 from itertools import cycle
@@ -13,9 +16,9 @@ from itertools import cycle
 # Move this to the bottom to avoid ImportError if fixtures aren't found at runtime
 try:
     from fixtures import (
-        org_payload, 
-        repos_payload, 
-        expected_repos, 
+        org_payload,
+        repos_payload,
+        expected_repos,
         apache2_repos,
         )
     FIXTURES_AVAILABLE = True
@@ -90,10 +93,10 @@ if FIXTURES_AVAILABLE:
 
     @parameterized_class([
         {
-        "org_payload": org_payload,
-        "repos_payload": repos_payload,
-        "expected": expected_repos,
-        "apache2": apache2_repos,
+            "org_payload": org_payload,
+            "repos_payload": repos_payload,
+            "expected": expected_repos,
+            "apache2": apache2_repos,
         }
     ])
     class TestIntegrationGithubOrgClient(unittest.TestCase):
