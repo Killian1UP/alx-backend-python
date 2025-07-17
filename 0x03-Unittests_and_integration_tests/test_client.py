@@ -90,6 +90,8 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         mock_get.return_value.json.side_effect = [
            cls.org_payload,
            cls.repos_payload,
+           cls.org_payload,
+           cls.repos_payload,
         ]
         
     
@@ -101,3 +103,10 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient("google")
         result = client.public_repos()
         self.assertEqual(result, self.expected)
+        
+    def test_public_repos_with_license(self):
+        """Test public_repos with license filter 'apache-2.0'."""
+        client = GithubOrgClient("google")
+        result = client.public_repos(license="apache-2.0")
+        self.assertEqual(result, self.apache2)
+
