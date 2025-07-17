@@ -19,7 +19,7 @@ try:
         repos_payload,
         expected_repos,
         apache2_repos,
-        )
+    )
     FIXTURES_AVAILABLE = True
 except ImportError:
     FIXTURES_AVAILABLE = False
@@ -90,14 +90,12 @@ class TestGithubOrgClient(unittest.TestCase):
 
 if FIXTURES_AVAILABLE:
 
-    @parameterized_class([
-        {
-            "org_payload": org_payload,
-            "repos_payload": repos_payload,
-            "expected": expected_repos,
-            "apache2": apache2_repos,
-        }
-    ])
+    @parameterized_class([{
+        "org_payload": org_payload,
+        "repos_payload": repos_payload,
+        "expected": expected_repos,
+        "apache2": apache2_repos,
+    }])
     class TestIntegrationGithubOrgClient(unittest.TestCase):
         """Integration test for GithubOrgClient.public_repos()."""
 
@@ -105,9 +103,9 @@ if FIXTURES_AVAILABLE:
         def setUpClass(cls):
             cls.get_patcher = patch("requests.get")
             mock_get = cls.get_patcher.start()
-            mock_get.return_value.json.side_effect = cycle(
-                [cls.org_payload, cls.repos_payload,]
-            )
+            mock_get.return_value.json.side_effect = cycle([
+                cls.org_payload, cls.repos_payload
+            ])
 
         @classmethod
         def tearDownClass(cls):
