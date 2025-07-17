@@ -5,8 +5,9 @@ Unit tests for GithubOrgClient class in client.py.
 
 import unittest
 from unittest.mock import patch, PropertyMock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -70,3 +71,34 @@ class TestGithubOrgClient(unittest.TestCase):
         client = GithubOrgClient("google")
         result = client.has_license(repo, license_key)
         self.assertEqual(result, expected)
+
+@parameterized_class([
+    {
+        "org_payload": org_payload,
+        "repos_payload": repos_payload,
+        "expected": expected_repos,
+        "apache2": apache2_repos,
+    }
+])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """Integration test for GithubOrgClient.public_repos()."""
+    
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.get_patcher = patch("client.get_json")
+        mock_get = cls.get_patcher.start()         
+        mock_get.side_effect = [
+           cls.org_payload,
+           cls.repos_payload,
+        ]
+        
+    
+    @classmethod
+    def tearDownClass(cls):
+        cls.get_patcher.stop()
+        
+    def test_public_repos(self):
+        client = GithubOrgClient("google")
+        result = client.public_repos()
+        self.assertEqual(result, self.expected)
