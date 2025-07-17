@@ -6,11 +6,10 @@ Unit tests for GithubOrgClient class in client.py.
 import unittest
 from unittest.mock import patch, PropertyMock
 from parameterized import (
-    parameterized, 
+    parameterized,
     parameterized_class
 )
 from client import GithubOrgClient
-import requests
 from itertools import cycle
 
 # Move this to the bottom to avoid ImportError if fixtures aren't found at runtime
@@ -106,10 +105,9 @@ if FIXTURES_AVAILABLE:
         def setUpClass(cls):
             cls.get_patcher = patch("requests.get")
             mock_get = cls.get_patcher.start()
-            mock_get.return_value.json.side_effect = cycle([
-                cls.org_payload,
-                cls.repos_payload,
-            ])
+            mock_get.return_value.json.side_effect = cycle(
+                [cls.org_payload, cls.repos_payload,]
+            )
 
         @classmethod
         def tearDownClass(cls):
