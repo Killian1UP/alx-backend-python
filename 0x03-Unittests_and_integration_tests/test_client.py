@@ -11,14 +11,14 @@ from client import GithubOrgClient
 
 class TestGithubOrgClient(unittest.TestCase):
     """Unit tests for methods in GithubOrgClient."""
-    
-    
+
     @parameterized.expand([
         ("google", {"name": "Google"}),
         ("abc", {"name": "ABC"})
     ])
     @patch("client.get_json")
     def test_org(self, org, expected_data, mock_get_json):
+        """Test that GithubOrgClient.org returns the correct org data."""
         mock_get_json.return_value = expected_data
         client = GithubOrgClient(org)
         result = client.org
@@ -28,6 +28,7 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected_data)
 
     def test_public_repos_url(self):
+        """Test that _public_repos_url returns correct repos_url."""
         with patch.object(
             GithubOrgClient, "org", new_callable=PropertyMock
         ) as mock_org:
@@ -42,6 +43,7 @@ class TestGithubOrgClient(unittest.TestCase):
 
     @patch("client.get_json")
     def test_public_repos(self, mock_get_json):
+        """Test that public_repos returns list of repository names."""
         fake_payload = [
             {"name": "repo1", "license": {"key": "mit"}},
             {"name": "repo2", "license": {"key": "apache-2.0"}},
