@@ -98,7 +98,7 @@ if FIXTURES_AVAILABLE:
 
         @classmethod
         def setUpClass(cls):
-            cls.get_patcher = patch("client.requests.get")
+            cls.get_patcher = patch("requests.get")
             mock_get = cls.get_patcher.start()
             mock_get.return_value.json.side_effect = cycle([
                 cls.org_payload, cls.repos_payload
