@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.core.validators import validate_email
+from rest_framework.exceptions import ValidationError
 from .models import Message
 from .models import Conversation
 
@@ -7,15 +9,24 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    full_name = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = [
             'user_id', 'first_name', 'last_name', 'email', 
-            'phone_number', 'role', 'created_at', 'password'
+            'phone_number', 'role', 'created_at', 'password', 'full_name'
         ]
         read_only_fields = ['user_id', 'created_id']
-        
+    
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
+    
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise ValidationError("This email is already in use.")
+        return value
+    
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)
