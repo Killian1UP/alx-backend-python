@@ -36,19 +36,30 @@ class UserSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
     sender_id = serializers.UUIDField(write_only=True)
+    conversation = serializers.UUIDField(write_only=True)
 
     class Meta:
         model = Message
         fields = [
-            'message_id', 'sender', 'sender_id', 'message_body', 'sent_at'
+            'message_id', 'sender', 'sender_id', 'conversation', 'message_body', 'sent_at'
         ]
         read_only_fields = ['message_id', 'sent_at']
         
-from .models import Conversation
-
+    def create(self, validated_data):
+        sender_id = validated_data.pop('sender_id')
+        conversation_id = validated_data.pop('conversation')
+        message = Message.objects.create(
+            sender_id=sender_id,
+            conversation_id=conversation_id,
+            **validated_data
+        )
+        return message  
+        
 class ConversationSerializer(serializers.ModelSerializer):
-    participants = UserSerializer(source='participants_id', read_only=True)
-    participants_id = serializers.UUIDField(write_only=True)
+    participants = UserSerializer(source='participants_id', many=True, read_only=True)
+    participants_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), many=True, write_only=True
+    )
     messages = MessageSerializer(many=True, read_only=True)
 
     class Meta:
@@ -57,3 +68,9 @@ class ConversationSerializer(serializers.ModelSerializer):
             'conversation_id', 'participants', 'participants_id', 'created_at', 'messages'
         ]
         read_only_fields = ['conversation_id', 'created_at']
+
+    def create(self, validated_data):
+        participants = validated_data.pop('participants_id')
+        conversation = Conversation.objects.create()
+        conversation.participants_id.set(participants)
+        return conversation
