@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.core.validators import validate_email
-from rest_framework.exceptions import ValidationError
 from .models import Message
 from .models import Conversation
 
@@ -24,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise ValidationError("This email is already in use.")
+            raise serializers.ValidationError("This email is already in use.")
         return value
     
     def create(self, validated_data):
