@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
+from .permissions import IsParticipantOfConversation
 
 
 # Create your views here.
@@ -36,7 +37,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsParticipantOfConversation]
     
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['sender_id', 'conversation']

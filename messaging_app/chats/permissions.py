@@ -1,10 +1,11 @@
 from rest_framework import permissions
+from .models import Conversation, Message
 
-from rest_framework import permissions
-
-class BasePermission(permissions.BasePermission):
-    """
-    Dummy base permission to satisfy checker.
-    """
+class IsParticipantOfConversation(permissions.BasePermission):
     def has_permission(self, request, view):
-        return True
+        # First check if the user is authenticated
+        return request.user and request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        # Check if the user is a participant in the conversation related to the message
+        return request.user in obj.conversation.participants_id.all()
