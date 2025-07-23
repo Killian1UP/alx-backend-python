@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'user_id', 'first_name', 'last_name', 'email', 
+            'user_id', 'username', 'first_name', 'last_name', 'email', 
             'phone_number', 'role', 'created_at', 'password', 'full_name'
         ]
         read_only_fields = ['user_id', 'created_id']
@@ -48,8 +48,13 @@ class MessageSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         sender_id = validated_data.pop('sender_id')
         conversation_id = validated_data.pop('conversation')
+        
+        # Convert UUIDs to model instances
+        sender = User.objects.get(user_id=sender_id)
+        conversation = Conversation.objects.get(conversation_id=conversation_id)
+        
         message = Message.objects.create(
-            sender_id=sender_id,
+            sender_id=sender,
             conversation_id=conversation_id,
             **validated_data
         )
@@ -74,3 +79,4 @@ class ConversationSerializer(serializers.ModelSerializer):
         conversation = Conversation.objects.create()
         conversation.participants_id.set(participants)
         return conversation
+    
