@@ -13,6 +13,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+from datetime import timedelta
+# from rest_framework_simplejwt.settings import api_settings as jwt_api_settings
+
+SIMPLE_JWT = {
+    'USER_ID_FIELD': 'user_id',  # your custom primary key field
+    'USER_ID_CLAIM': 'user_id',  # name of the claim in the token payload
+}
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
@@ -44,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'chats.apps.ChatsConfig',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -137,6 +145,9 @@ AUTH_USER_MODEL = 'chats.User'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
