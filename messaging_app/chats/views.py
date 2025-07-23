@@ -7,6 +7,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsParticipantOfConversation
+from rest_framework.response import Response
 
 
 # Create your views here.
@@ -37,7 +38,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsParticipantOfConversation]
+    permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['sender_id', 'conversation']
@@ -49,4 +50,13 @@ class MessageViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         # Save message with authenticated user as sender
-        serializer.save(sender_id=self.request.user.user_id)
+        conversation_id = self.request.data.get('conversation')
+        try:
+            conversation = Conversation.objects.get(conversation_id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({"detail": "Conversation does not exist."}, status=status.HTTP_403_FORBIDDEN)
+
+        if self.request.user not in conversation.participants_id.all():
+            return Response({"detail": "You are not a participant in this conversation."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer.save(sender_id=self.request.user, conversation=conversation)
