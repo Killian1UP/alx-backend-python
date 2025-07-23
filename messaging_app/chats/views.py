@@ -8,6 +8,8 @@ from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsParticipantOfConversation
 from rest_framework.response import Response
+from .pagination import MessagePagination
+from .filters import MessageFilter
 
 
 # Create your views here.
@@ -39,10 +41,13 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    pagination_class = MessagePagination
+    
     
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['sender_id', 'conversation']
     ordering_fields = ['sent_at']
+    filterset_class = MessageFilter
     
     def get_queryset(self):
         # Only return messages in conversations the user is part of
