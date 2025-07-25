@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'chats.apps.ChatsConfig',
     'rest_framework.authtoken',
-    'django_filter',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
