@@ -14,7 +14,7 @@ from .filters import MessageFilter
 
 # Create your views here.
 class UserViewset(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('created_at')
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
@@ -29,7 +29,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # Only return conversations where the user is a participant
-        return Conversation.objects.filter(participants_id=self.request.user)
+        return Conversation.objects.filter(participants_id=self.request.user).order_by('-created_at')
     
     def perform_create(self, serializer):
         # Save the conversation and add the authenticated user as a participant
@@ -51,7 +51,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # Only return messages in conversations the user is part of
-        return Message.objects.filter(conversation__participants_id=self.request.user)
+        return Message.objects.filter(conversation__participants_id=self.request.user).order_by('-sent_at')
     
     def perform_create(self, serializer):
         # Save message with authenticated user as sender
@@ -64,4 +64,4 @@ class MessageViewSet(viewsets.ModelViewSet):
         if self.request.user not in conversation.participants_id.all():
             return Response({"detail": "You are not a participant in this conversation."}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer.save(sender_id=self.request.user, conversation=conversation)
+        serializer.save(sender_id=self.request.user.user_id, conversation=conversation.conversation_id)

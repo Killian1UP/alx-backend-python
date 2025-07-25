@@ -55,7 +55,7 @@ class MessageSerializer(serializers.ModelSerializer):
         
         message = Message.objects.create(
             sender_id=sender,
-            conversation_id=conversation_id,
+            conversation=conversation,
             **validated_data
         )
         return message  
