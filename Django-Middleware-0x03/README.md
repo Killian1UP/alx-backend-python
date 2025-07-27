@@ -1,121 +1,102 @@
-# Messaging App - Django REST Framework
+# Django Middleware Project: Messaging App
 
-This project is a messaging system built using Django and Django REST Framework. It is part of the **ALX Backend Python** curriculum and demonstrates model design, serializer implementation, API development using viewsets, and URL routing with nested resources.
+This project is a continuation of the `messaging_app` built in the `Building Robust APIs` module. The focus here is on implementing custom Django middleware to enhance functionality and control over user interactions within the application.
 
----
+## Project Structure
 
-## 🛠 Project Setup
-
-- Initialized Django project: `django-admin startproject messaging_app`
-- Installed Django REST Framework via `pip install djangorestframework`
-- Added `'rest_framework'` to `INSTALLED_APPS` in `settings.py`
-- Created a new app for messaging: `python manage.py startapp chats`
+- **Repository:** `alx-backend-python`
+- **Directory:** `Django-Middleware-0x03`
+- **App:** `chats`
+- **Entry Point:** `Django-Middleware-0x03/chats/middleware.py`
 
 ---
 
-## 🧩 Models
+## 1. Logging User Requests
 
-Located in: `messaging_app/chats/models.py`
+**Objective:** Log each user’s request to a log file.
 
-### `User`
-- Extended from `AbstractUser`
-- Fields: `user_id`, `first_name`, `last_name`, `email`, `password_hash`, `phone_number`, `role`, `created_at`
+### Implementation:
+- Created a class `RequestLoggingMiddleware` with `__init__` and `__call__` methods.
+- Logs the request time, user, and path to `requests.log`.
+- Example log: `2025-07-27 12:45:23 - User: johndoe - Path: /api/messages/`
 
-### `Conversation`
-- Fields: `conversation_id`, `participants_id` (ManyToMany to User), `created_at`
-
-### `Message`
-- Fields: `message_id`, `sender_id` (ForeignKey to User), `conversation` (ForeignKey to Conversation), `message_body`, `sent_at`
+**File:** `chats/middleware.py`  
+**Log File:** `requests.log`
 
 ---
 
-## 🔄 Serializers
+## 2. Restrict Chat Access by Time
 
-Located in: `messaging_app/chats/serializers.py`
+**Objective:** Restrict chat access to users only between 6PM and 9PM.
 
-- `UserSerializer`: Includes full name, email validation, password handling
-- `ConversationSerializer`: Handles nested messages, many-to-many participants
-- `MessageSerializer`: Handles linking sender and conversation by UUID
+### Implementation:
+- Created a class `RestrictAccessByTimeMiddleware`.
+- Checks server time using `datetime.now().hour`.
+- Denies access (HTTP 403) if request time is outside 18:00 to 21:00.
 
----
-
-## 🔧 Views
-
-Located in: `messaging_app/chats/views.py`
-
-- `ConversationViewSet`: Lists and creates conversations
-- `MessageViewSet`: Lists and sends messages to existing conversations
-- Both viewsets use `IsAuthenticated` and `SessionAuthentication`
+**File:** `chats/middleware.py`
 
 ---
 
-## 🌐 URL Routing
+## 3. Detect and Block Offensive Language (Rate Limiting)
 
-### `chats/urls.py`
-- Used `DefaultRouter` to register:
-  - `conversation/`
-  - `message/`
+**Objective:** Limit the number of chat messages a user can send per minute.
 
-### `messaging_app/urls.py`
-- Included the `chats` app routes with path `'api/'`
-- Added `api-auth/` for session login via browsable API
+### Implementation:
+- Created a class `OffensiveLanguageMiddleware`.
+- Tracks number of POST requests to `/api/messages/` per IP.
+- Denies access (HTTP 403) if more than 5 messages are sent within a minute.
+
+**File:** `chats/middleware.py`
 
 ---
 
-## 🚀 Running the Application
+## 4. Enforce Chat User Role Permissions
 
-To run and test the application:
+**Objective:** Allow only admins to access certain actions.
 
+### Implementation:
+- Created a class `RolepermissionMiddleware`.
+- Checks if the user role is `admin`.
+- Restricts access to paths starting with `/api/messages/` for non-admin users.
+
+**File:** `chats/middleware.py`
+
+---
+
+## Middleware Configuration
+
+All middleware classes were added to the `MIDDLEWARE` list in `settings.py` in the following order (below built-in middleware):
+
+```
+MIDDLEWARE = [
+    ...
+    'chats.middleware.RequestLoggingMiddleware',
+    'chats.middleware.RestrictAccessByTimeMiddleware',
+    'chats.middleware.OffensiveLanguageMiddleware',
+    'chats.middleware.RolepermissionMiddleware',
+]
+```
+
+---
+
+## How to Run
+
+1. Clone the repo:
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+git clone https://github.com/Killian1UP/alx-backend-python.git
+cd Django-Middleware-0x03
+```
+
+2. Set up the virtual environment and install dependencies.
+
+3. Run the server:
+```bash
 python manage.py runserver
 ```
 
-Check the API endpoints in your browser at `http://127.0.0.1:8000/api/`
-
 ---
 
-## ✅ Features Implemented
+## Author
 
-- User model extending AbstractUser with custom fields
-- Conversation with multiple participants
-- Messaging system with conversation linking
-- Full CRUD API for conversations and messages using DRF ViewSets
-- Nested serializers for rich API responses
-- Authenticated routes with DRF permissions
-
----
-
-## 📁 Directory Structure
-
-```
-messaging_app/
-│
-├── chats/
-│   ├── models.py
-│   ├── serializers.py
-│   ├── views.py
-│   ├── urls.py
-│
-├── messaging_app/
-│   ├── settings.py
-│   ├── urls.py
-│
-├── manage.py
-```
-
----
-
-## 🧪 Testing and Debugging
-
-- Verified all API routes using Django's browsable API
-- Applied migrations after model changes
-- Handled validation errors in serializers
-- Ensured `runserver` started with no errors
-
----
-
-## 📜 License
-
-This project is for educational purposes under ALX Africa.
+Ikaelelo Motlhako
