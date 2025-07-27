@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from django.http import HttpResponseForbidden
 from collections import defaultdict
+from chats.models import UserRole
 
 logging.basicConfig(
     filename='requests.log',
@@ -62,4 +63,18 @@ class OffensiveLanguageMiddleware:
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             return x_forwarded_for.split(',')[0]
-        return request.META.get('REMOTE_ADDR')           
+        return request.META.get('REMOTE_ADDR')   
+    
+class RolepermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response     
+        
+    def __call__(self, request):
+        # Restrict access to /api/messages/* for non-admins
+        if request.path.startswith("/api/messages/"):
+            user = request.user
+
+            if not user.is_authenticated or user.role != UserRole.ADMIN:
+                return HttpResponseForbidden("Access denied: Admins only.")
+
+        return self.get_response(request)
