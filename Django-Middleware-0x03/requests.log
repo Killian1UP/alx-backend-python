@@ -5,3 +5,8 @@ Unauthorized: /api/conversations/
 Forbidden: /api/
 2025-07-27 14:09:52.339301 - User: Anonymous - Path: /api/users/
 Forbidden: /api/users/
+2025-07-27 15:23:21.311006 - User: Anonymous - Path: /api/messages/
+Forbidden: /api/messages/
+C:\Documents\alx-backend-python\Django-Middleware-0x03\chats\middleware.py changed, reloading.
+C:\Documents\alx-backend-python\Django-Middleware-0x03\chats\middleware.py changed, reloading.
+C:\Documents\alx-backend-python\Django-Middleware-0x03\chats\middleware.py changed, reloading.
