@@ -1,3 +1,7 @@
 2025-07-27 01:20:13.560499 - User: Anonymous - Path: /api/users/
 2025-07-27 01:20:42.225041 - User: Anonymous - Path: /api/conversations/
 Unauthorized: /api/conversations/
+2025-07-27 14:09:16.084375 - User: Anonymous - Path: /api/
+Forbidden: /api/
+2025-07-27 14:09:52.339301 - User: Anonymous - Path: /api/users/
+Forbidden: /api/users/
