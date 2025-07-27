@@ -1,6 +1,7 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.http import HttpResponseForbidden
+from collections import defaultdict
 
 logging.basicConfig(
     filename='requests.log',
@@ -32,3 +33,33 @@ class RestrictAccessByTimeMiddleware:
             return HttpResponseForbidden("Access is only allowed between 6pm or 9pm.")
         
         return self.get_response(request)
+    
+class OffensiveLanguageMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.requests_log = defaultdict(list)
+        
+    def __call__(self, request):
+        if request.method == "POST" and request.path.startswith("/api/messages/"):
+            ip = self.get_client_ip(request)
+            now = datetime.now()
+            one_minute_ago = now - timedelta(minutes=1)   
+            
+            # Clean up old timestamps
+            self.requests_log[ip] = [
+                ts for ts in self.requests_log[ip] if ts > one_minute_ago
+            ]
+
+            if len(self.requests_log[ip]) >= 5:
+                return HttpResponseForbidden("Rate limit exceeded: Max 5 messages per minute.")
+
+            self.requests_log[ip].append(now)
+
+        return self.get_response(request) 
+    
+    def get_client_ip(self, request):
+        # If behind a proxy like NGINX, use HTTP_X_FORWARDED_FOR
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')           
