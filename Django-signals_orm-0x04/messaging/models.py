@@ -41,6 +41,7 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     content = models.TextField(null=False, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.sender} to {self.receiver} at {self.timestamp}"
@@ -57,4 +58,13 @@ class Notification(models.Model):
         
     def __str__(self):
         return f"Notification for {self.user.username} - Message ID: {self.message.message_id}"
+
+class MessageHistory(models.Model):
+    history_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)  
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='histories')
+    old_content = models.TextField()
+    edited_at = models.DateTimeField(auto_now_add=True)
+    edited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='histories')
     
+    def __str__(self):
+        return f"History of {self.message} at {self.edited_at} by {self.edited_by}"
