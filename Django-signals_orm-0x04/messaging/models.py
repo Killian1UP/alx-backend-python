@@ -39,12 +39,38 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    parent_message = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
     content = models.TextField(null=False, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.sender} to {self.receiver} at {self.timestamp}"
+    
+    def get_thread(self, include_self=False):
+        """
+        Return this message and all replies recursively as a flat list (or adjust to tree if needed).
+        """
+        results = []
+
+        def recurse(msg):
+            results.append(msg)
+            for reply in msg.replies.all():
+                recurse(reply)
+
+        if include_self:
+            recurse(self)
+        else:
+            for reply in self.replies.all():
+                recurse(reply)
+
+        return results
     
 class Notification(models.Model):
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)

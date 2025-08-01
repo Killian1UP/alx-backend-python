@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework import viewsets, filters, mixins
+from rest_framework import viewsets, filters, mixins, exceptions
 from .models import Message, Conversation, User, Notification, MessageHistory
 from .serializers import MessageSerializer, ConversationSerializer, UserSerializer, NotificationSerializer, MessageHistorySerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -10,7 +10,7 @@ from .permissions import IsParticipantOfConversation
 from rest_framework.response import Response
 from .pagination import MessagePagination
 from .filters import MessageFilter
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
 
 
 # Create your views here.
@@ -30,7 +30,10 @@ class ConversationViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # Only return conversations where the user is a participant
-        return Conversation.objects.filter(participants_id=self.request.user).order_by('-created_at')
+        return (Conversation.objects
+            .filter(participants_id=self.request.user)
+            .prefetch_related('participants_id', 'messages__sender', 'messages__receiver')
+            .order_by('-created_at'))
     
     def perform_create(self, serializer):
         # Save the conversation and add the authenticated user as a participant
@@ -52,20 +55,50 @@ class MessageViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # Only return messages in conversations the user is part of
-        return Message.objects.filter(conversation__participants_id=self.request.user).order_by('-timestamp')
+        return (
+        Message.objects
+        .filter(conversation__participants_id=self.request.user)
+        .select_related('sender', 'receiver', 'conversation', 'parent_message')  # FK joins
+        .prefetch_related('replies')  # reverse FK for nested replies
+        .order_by('-timestamp')
+    )
     
     def perform_create(self, serializer):
-        # Save message with authenticated user as sender
-        conversation_id = self.request.data.get('conversation')
+        # sender is always request.user
+        serializer.save(sender=self.request.user)
+
+        
+    def _build_thread_tree(self, root_message):
+        def serialize_node(msg):
+            data = self.get_serializer(msg).data
+            children = [serialize_node(reply) for reply in msg.replies.all().order_by('timestamp')]
+            data['replies'] = children
+            return data
+        return serialize_node(root_message)
+        
+
+    @action(detail=True, methods=["get"])
+    def thread(self, request, *args, **kwargs):
+        conversation_id = self.kwargs.get('conversation_pk')
+        message_id = self.kwargs.get('pk')
+
+        # ensure message exists under that conversation
         try:
-            conversation = Conversation.objects.get(conversation_id=conversation_id)
-        except Conversation.DoesNotExist:
-            return Response({"detail": "Conversation does not exist."}, status=status.HTTP_403_FORBIDDEN)
+            message = (
+                Message.objects
+                .select_related('sender', 'receiver', 'parent_message', 'conversation')
+                .prefetch_related('replies__sender', 'replies__receiver', 'replies__replies')
+                .get(message_id=message_id, conversation__conversation_id=conversation_id)
+            )
+        except Message.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if self.request.user not in conversation.participants_id.all():
-            return Response({"detail": "You are not a participant in this conversation."}, status=status.HTTP_403_FORBIDDEN)
+        # permission: participant in conversation
+        if request.user not in message.conversation.participants_id.all():
+            return Response({"detail": "Forbidden."}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer.save(sender=self.request.user, conversation=conversation)
+        nested = self._build_thread_tree(message)
+        return Response(nested)
         
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Notification.objects.all()
@@ -92,10 +125,9 @@ def delete_user(request):
     user = request.user
     # require password confirmation in body
     password = request.data.get('password')
-    if password:
-        if not user.check_password(password):
-            return Response({"detail": "Incorrect password."}, status=status.HTTP_403_FORBIDDEN)
+    if not password or not user.check_password(password):
+        return Response({"detail": "Incorrect or missing password."}, status=status.HTTP_403_FORBIDDEN)
     # perform delete
     user.delete()
-    return Response({"detail": "Account deleted."}, status=status.HHTP_200_OK)
+    return Response({"detail": "Account deleted."}, status=status.HTTP_200_OK)
     
