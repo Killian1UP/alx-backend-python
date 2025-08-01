@@ -10,6 +10,7 @@ from .permissions import IsParticipantOfConversation
 from rest_framework.response import Response
 from .pagination import MessagePagination
 from .filters import MessageFilter
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 
 
 # Create your views here.
@@ -83,3 +84,18 @@ class MessageHistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return MessageHistory.objects.filter(edited_by=self.request.user).order_by('-edited_at')
+    
+@api_view(['DELETE'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_user(request):
+    user = request.user
+    # require password confirmation in body
+    password = request.data.get('password')
+    if password:
+        if not user.check_password(password):
+            return Response({"detail": "Incorrect password."}, status=status.HTTP_403_FORBIDDEN)
+    # perform delete
+    user.delete()
+    return Response({"detail": "Account deleted."}, status=status.HHTP_200_OK)
+    
