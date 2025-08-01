@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from .managers import UnreadMessagesManager
 
 # Create your models here.
 class UserRole(models.TextChoices):
@@ -33,11 +34,6 @@ class Conversation(models.Model):
     conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)
     participants_id = models.ManyToManyField(User, related_name='conversations')
     created_at = models.DateTimeField(auto_now_add=True)
-
-class UnreadMessagesManager(models.Manager):
-    def for_user(self, user):
-        # Return messages where receiver is the user and read=False
-        return self.filter(receiver=user, read=False)
 
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)
