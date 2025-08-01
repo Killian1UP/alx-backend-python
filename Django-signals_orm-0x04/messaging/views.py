@@ -57,22 +57,16 @@ class MessageViewSet(viewsets.ModelViewSet):
         # Only return messages in conversations the user is part of
         return (
         Message.objects
-        .filter(sender=self.request.user, conversation__participants_id=self.request.user)
+        .filter(conversation__participants_id=self.request.user)
         .select_related('sender', 'receiver', 'conversation', 'parent_message')  # FK joins
         .prefetch_related('replies')  # reverse FK for nested replies
         .order_by('-timestamp')
     )
     
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-    
     def perform_create(self, serializer):
         # sender is always request.user
-        serializer.save(sender=self.request.user)
+        request = self.request
+        serializer.save(sender=request.user)
 
         
     def _build_thread_tree(self, root_message):
