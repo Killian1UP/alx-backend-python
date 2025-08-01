@@ -11,6 +11,8 @@ from rest_framework.response import Response
 from .pagination import MessagePagination
 from .filters import MessageFilter
 from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 
 # Create your views here.
@@ -40,6 +42,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation = serializer.save()
         conversation.participants_id.add(self.request.user)
 
+@method_decorator(cache_page(60), name="list")  # cache list view for 60 seconds
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
