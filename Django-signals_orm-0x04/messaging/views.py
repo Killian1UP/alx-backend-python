@@ -115,8 +115,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         fields_to_retrieve = ['message_id', 'sender_id', 'conversation_id', 'content', 'timestamp', 'read']
 
         unread_msgs = (
-            Message.unread
-            .unread_for_user(user)
+            Message.unread.unread_for_user(user)
             .select_related('sender', 'conversation')
             .only(*fields_to_retrieve)  # Optimize fields loaded
             .order_by('-timestamp')
