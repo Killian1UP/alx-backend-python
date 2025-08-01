@@ -63,6 +63,13 @@ class MessageViewSet(viewsets.ModelViewSet):
         .order_by('-timestamp')
     )
     
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
     def perform_create(self, serializer):
         # sender is always request.user
         serializer.save(sender=self.request.user)
@@ -71,9 +78,14 @@ class MessageViewSet(viewsets.ModelViewSet):
     def _build_thread_tree(self, root_message):
         def serialize_node(msg):
             data = self.get_serializer(msg).data
-            children = [serialize_node(reply) for reply in msg.replies.all().order_by('timestamp')]
-            data['replies'] = children
+
+            children = Message.objects.filter(parent_message=msg).select_related(
+                'sender', 'receiver'
+            ).order_by('timestamp')
+
+            data['replies'] = [serialize_node(child) for child in children]
             return data
+
         return serialize_node(root_message)
         
 
