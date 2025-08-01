@@ -57,7 +57,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         # Only return messages in conversations the user is part of
         return (
         Message.objects
-        .filter(conversation__participants_id=self.request.user)
+        .filter(sender=self.request.user, conversation__participants_id=self.request.user)
         .select_related('sender', 'receiver', 'conversation', 'parent_message')  # FK joins
         .prefetch_related('replies')  # reverse FK for nested replies
         .order_by('-timestamp')
