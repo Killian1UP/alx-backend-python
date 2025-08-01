@@ -33,7 +33,12 @@ class Conversation(models.Model):
     conversation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)
     participants_id = models.ManyToManyField(User, related_name='conversations')
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
+class UnreadMessagesManager(models.Manager):
+    def for_user(self, user):
+        # Return messages where receiver is the user and read=False
+        return self.filter(receiver=user, read=False)
+
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, db_index=True)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
@@ -49,6 +54,10 @@ class Message(models.Model):
     content = models.TextField(null=False, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     edited = models.BooleanField(default=False)
+    read = models.BooleanField(default=False)
+    
+    objects = models.Manager()  # Default manager
+    unread = UnreadMessagesManager()  # Custom manager for unread messages
     
     def __str__(self):
         return f"{self.sender} to {self.receiver} at {self.timestamp}"

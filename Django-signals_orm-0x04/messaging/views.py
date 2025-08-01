@@ -105,6 +105,31 @@ class MessageViewSet(viewsets.ModelViewSet):
 
         nested = self._build_thread_tree(message)
         return Response(nested)
+    
+    
+@action(detail=False, methods=['get'], url_path='unread')
+def unread_messages(self, request):
+    user = request.user
+    
+    # List only fields needed by your serializer or UI:
+    fields_to_retrieve = ['message_id', 'sender_id', 'conversation_id', 'content', 'timestamp', 'read']
+
+    unread_msgs = (
+        Message.unread
+        .for_user(user)
+        .select_related('sender', 'conversation')
+        .only(*fields_to_retrieve)  # Optimize fields loaded
+        .order_by('-timestamp')
+    )
+    
+    page = self.paginate_queryset(unread_msgs)
+    if page is not None:
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+    
+    serializer = self.get_serializer(unread_msgs, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
         
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Notification.objects.all()
