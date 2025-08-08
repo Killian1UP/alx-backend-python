@@ -20,7 +20,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # 6️⃣ Copy the rest of the application code
 COPY . /app/
 
-# 7️⃣ Expose Django's default port
+# 7️⃣ Expose Django's default port -p
 EXPOSE 8000
 
 # 8️⃣ Default command to run Django (can be overridden in docker-compose)
