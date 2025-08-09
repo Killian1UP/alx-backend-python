@@ -3,7 +3,13 @@ services:
     image: mysql:8.0
     container_name: messaging_db
     restart: always
-    env_file: .env
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3307:3306"
     volumes:
@@ -17,7 +23,14 @@ services:
       - .:/app
     ports:
       - "8001:8000"
-    env_file: .env
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      MYSQL_DB: ${MYSQL_DB}          # Django will read this
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       - db
 
