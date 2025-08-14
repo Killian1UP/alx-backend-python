@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Start Kubernetes cluster using Docker driver
+echo "Starting Kubernetes cluster..."
+minikube start --driver=docker
+
+# Verify that the cluster is running
+echo "Verifying cluster status..."
+kubectl cluster-info
+
+# Retrieve available pods from all namespaces
+echo "Listing available pods..."
+kubectl get pods --all-namespaces
