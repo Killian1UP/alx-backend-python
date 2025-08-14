@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Step 1: Scale the Django deployment to 3 replicas
+kubectl scale deployment messaging-app-deployment --replicas=3
+echo "Scaled deployment to 3 replicas."
+
+# Step 2: Wait until all pods are ready
+echo "Waiting for all pods to be ready..."
+kubectl wait --for=condition=Ready pod -l app=messaging-app --timeout=60s
+kubectl get pods
+# Note: Ensures all 3 pods are ready before load testing
+
+# Step 3: Find a free port for port-forward
+PORT=8000
+while lsof -i :$PORT >/dev/null 2>&1; do
+    PORT=$((PORT+1))
+done
+echo "Using port $PORT for port-forward."
+
+# Step 4: Set up port-forward if ClusterIP service
+SERVICE_TYPE=$(kubectl get svc messaging-app-service -o jsonpath='{.spec.type}')
+if [ "$SERVICE_TYPE" = "ClusterIP" ]; then
+    echo "ClusterIP service detected, starting port-forward..."
+    kubectl port-forward service/messaging-app-service $PORT:8000 &
+    PORT_FORWARD_PID=$!
+    sleep 3  # wait for port-forward to establish
+    TEST_URL="http://127.0.0.1:$PORT"
+else
+    NODE_PORT=$(kubectl get svc messaging-app-service -o jsonpath='{.spec.ports[0].nodePort}')
+    NODE_IP=$(minikube ip)
+    TEST_URL="http://$NODE_IP:$NODE_PORT"
+fi
+
+# Step 5: Perform load testing using wrk
+echo "Running load test on $TEST_URL..."
+wrk -t2 -c10 -d10s $TEST_URL
+
+# Step 6: Verify metrics-server availability
+if kubectl get deployment metrics-server -n kube-system &>/dev/null; then
+    echo "Metrics-server detected. Showing pod resource usage..."
+    kubectl top pods
+else
+    echo "Metrics-server not found. Installing..."
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    echo "Wait a minute, then run: kubectl top pods"
+fi
+
+# Step 7: Cleanup port-forward if it was started
+if [ ! -z "$PORT_FORWARD_PID" ]; then
+    kill $PORT_FORWARD_PID 2>/dev/null
+    echo "Port-forward stopped."
+fi
+
