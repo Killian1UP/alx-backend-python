@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# kubctl-0x03: Rolling update with automatic service continuity and curl check
+
+SERVICE_NAME="messaging-app-service"
+BLUE_DEPLOY="messaging-app-blue"
+BLUE_VERSION="blue"
+NEW_IMAGE="messaging_app:2.0"
+PORT=8000
+CURL_DURATION=15  # seconds to test continuity
+
+# Step 0: Determine current version from the service
+CURRENT_VERSION=$(kubectl get svc $SERVICE_NAME -o jsonpath='{.spec.selector.version}')
+echo "Current service points to version: $CURRENT_VERSION"
+
+# Step 1: Update the deployment image for the current version
+echo "Updating deployment $BLUE_DEPLOY with image $NEW_IMAGE..."
+kubectl set image deployment/$BLUE_DEPLOY messaging-app=$NEW_IMAGE
+
+# Step 2: Monitor rollout status
+echo "Monitoring rollout progress for $BLUE_DEPLOY..."
+kubectl rollout status deployment/$BLUE_DEPLOY
+
+# Step 3: Start port-forward in the background
+kubectl port-forward svc/$SERVICE_NAME $PORT:$PORT &
+PF_PID=$!
+echo "Port-forwarding started (PID: $PF_PID) to http://127.0.0.1:$PORT"
+
+# Step 4: Test continuity with curl in the background
+echo "Testing app continuity at /api/users/ for $CURL_DURATION seconds..."
+(
+  END=$((SECONDS+CURL_DURATION))
+  while [ $SECONDS -lt $END ]; do
+    STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:$PORT/api/users/)
+    echo "Response code: $STATUS_CODE"
+    sleep 1
+  done
+) &
+
+CURL_PID=$!
+
+# Wait for curl test to finish
+wait $CURL_PID
+
+# Step 5: Verify pods after rolling update
+echo "Current pods for $CURRENT_VERSION version:"
+kubectl get pods -l app=messaging-app,version=$CURRENT_VERSION
+
+# Step 6: Stop port-forward
+kill $PF_PID
+echo "Rolling update, continuity test, and port-forward stopped."
+
