@@ -9,7 +9,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/<your-username>/alx-backend-python.git',
+                    url: 'https://github.com/Killian1UP/alx-backend-python.git',
                     credentialsId: 'github-cred'
             }
         }
@@ -19,8 +19,8 @@ pipeline {
                 sh '''
                     $PYTHON -m venv venv
                     . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r messaging_app/requirements.txt
+                    $PYTHON -m pip install --upgrade pip
+                    $PYTHON -m pip install -r messaging_app/requirements.txt
                 '''
             }
         }
