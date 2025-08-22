@@ -1,9 +1,9 @@
 pipeline {
     agent {
-	docker {
+        docker {
             image 'python:3.11-slim'
             args '-v /var/run/docker.sock:/var/run/docker.sock'
-	}
+        }
     }
 
     environment {
@@ -11,13 +11,6 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-                    credentialsId: 'github-cred'
-            }
-        }
-
         stage('Install dependencies') {
             steps {
                 sh '''
@@ -42,7 +35,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    pytest messaging_app/messaging_app/tests --junitxml=reports/results.xml
+                    pytest messaging_app/messaging_app/tests --ds=messaging_app.settings --junitxml=reports/results.xml
                 '''
             }
             post {
