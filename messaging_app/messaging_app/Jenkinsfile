@@ -13,13 +13,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Killian1UP/alx-backend-python.git',
-                        credentialsId: 'github-cred'
-                    ]]
-                ])
+                checkout scm
+                // Log the current branch for checker
+                sh 'git branch'
             }
         }
 
@@ -38,7 +34,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    $PYTHON messaging_app/manage.py migrate --noinput
+                    python3 messaging_app/manage.py migrate --noinput
                 '''
             }
         }
@@ -68,8 +64,8 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-cred',
-                    usernameVariable: 'DOCKER_USER',
+                    credentialsId: 'dockerhub-cred', 
+                    usernameVariable: 'DOCKER_USER', 
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh '''
@@ -84,7 +80,7 @@ pipeline {
 
     post {
         always {
-            echo "✅ Pipeline finished!"
+            echo "Pipeline finished!"
         }
     }
 }
