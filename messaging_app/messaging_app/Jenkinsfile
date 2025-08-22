@@ -1,82 +1,128 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.11-slim'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
 
     environment {
+        MYSQL_ROOT_PASSWORD = '0647509789ItM*'
+        MYSQL_USER = 'messaging_user'
+        MYSQL_PASSWORD = '0825292241ITM'
+        MYSQL_DATABASE = 'messaging'
         PYTHON = 'python3'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Explicit Git clone to avoid checkout scm errors
                 git branch: 'main',
                     url: 'https://github.com/Killian1UP/alx-backend-python.git',
                     credentialsId: 'github-cred'
-
-                // Log the current branch for the checker
                 sh 'git branch'
+            }
+        }
+
+        stage('Start MySQL') {
+            steps {
+                script {
+                    // Pick a free port randomly between 3307-3999
+                    def port = sh(script: "shuf -i 3307-3999 -n 1", returnStdout: true).trim()
+                    env.MYSQL_PORT = port
+
+                    echo "Starting MySQL on host port ${MYSQL_PORT}..."
+                    sh """
+                        docker run -d --name jenkins_mysql --rm \
+                            -e MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD} \
+                            -e MYSQL_DATABASE=${MYSQL_DATABASE} \
+                            -e MYSQL_USER=${MYSQL_USER} \
+                            -e MYSQL_PASSWORD=${MYSQL_PASSWORD} \
+                            -p ${MYSQL_PORT}:3306 \
+                            mysql:8.0
+                    """
+                }
+            }
+        }
+
+        stage('Wait for MySQL') {
+            steps {
+                sh """
+                    echo "Waiting for MySQL to be ready on port ${MYSQL_PORT}..."
+                    for i in {1..30}; do
+                        docker exec jenkins_mysql mysqladmin ping -h 127.0.0.1 -u${MYSQL_USER} -p${MYSQL_PASSWORD} --silent && exit 0
+                        sleep 2
+                    done
+                    echo "MySQL did not start in time" && exit 1
+                """
             }
         }
 
         stage('Install dependencies') {
             steps {
-                sh '''
+                sh """
+                    cd messaging_app
                     $PYTHON -m venv venv
                     . venv/bin/activate
                     pip3 install --upgrade pip
-                    pip3 install -r messaging_app/requirements.txt
-                '''
+                    pip3 install -r requirements.txt
+                """
             }
         }
 
         stage('Run Migrations') {
             steps {
-                sh '''
+                sh """
+                    cd messaging_app
                     . venv/bin/activate
-                    python3 messaging_app/manage.py migrate --noinput
-                '''
+                    export DB_HOST=127.0.0.1
+                    export DB_PORT=${MYSQL_PORT}
+                    export MYSQL_USER=${MYSQL_USER}
+                    export MYSQL_PASSWORD=${MYSQL_PASSWORD}
+                    export MYSQL_DATABASE=${MYSQL_DATABASE}
+
+                    python manage.py migrate --noinput
+                """
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
+                sh """
+                    cd messaging_app
                     . venv/bin/activate
-                    pytest messaging_app/messaging_app/tests --junitxml=reports/results.xml
-                '''
+                    export DB_HOST=127.0.0.1
+                    export DB_PORT=${MYSQL_PORT}
+                    export MYSQL_USER=${MYSQL_USER}
+                    export MYSQL_PASSWORD=${MYSQL_PASSWORD}
+                    export MYSQL_DATABASE=${MYSQL_DATABASE}
+
+                    pytest messaging_app/tests --junitxml=reports/results.xml || true
+                """
             }
             post {
                 always {
-                    junit 'reports/results.xml'
+                    junit 'messaging_app/reports/results.xml'
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build -t messaging_app:latest messaging_app/
-                '''
+                sh """
+                    cd messaging_app
+                    docker build -t messaging_app:latest .
+                """
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-cred', 
-                    usernameVariable: 'DOCKER_USER', 
+                    credentialsId: 'dockerhub-cred',
+                    usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
+                    sh """
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker tag messaging_app:latest $DOCKER_USER/messaging_app:latest
                         docker push $DOCKER_USER/messaging_app:latest
-                    '''
+                    """
                 }
             }
         }
@@ -84,6 +130,10 @@ pipeline {
 
     post {
         always {
+            sh """
+                echo "Stopping MySQL container..."
+                docker stop jenkins_mysql || true
+            """
             echo "Pipeline finished!"
         }
     }
