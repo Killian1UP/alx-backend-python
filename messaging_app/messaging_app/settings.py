@@ -29,7 +29,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'change-me-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -88,9 +88,9 @@ WSGI_APPLICATION = 'messaging_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQL_DATABASE'),
-        'USER': os.getenv('MYSQL_USER'),
-        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
+        'NAME': os.getenv('MYSQL_DATABASE', 'messaging'),
+        'USER': os.getenv('MYSQL_USER', 'messaging_user'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD', '0825292241ITM'),
         'HOST': os.getenv('DB_HOST', 'db'),   # 'db' is the service name for MySQL container
         'PORT': os.getenv('DB_PORT', '3306'),
     }
