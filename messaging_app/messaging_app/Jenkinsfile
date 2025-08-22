@@ -13,8 +13,12 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
-                // Log the current branch for checker
+                // Explicit Git clone to avoid checkout scm errors
+                git branch: 'main',
+                    url: 'https://github.com/Killian1UP/alx-backend-python.git',
+                    credentialsId: 'github-cred'
+
+                // Log the current branch for the checker
                 sh 'git branch'
             }
         }
