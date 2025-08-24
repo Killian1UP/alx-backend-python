@@ -1,0 +1,85 @@
+name: Django CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: 0647509789ItM*
+          MYSQL_DATABASE: messaging
+          MYSQL_USER: messaging_user
+          MYSQL_PASSWORD: 0825292241ITM
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: messaging_user
+      DB_PASSWORD: 0825292241ITM
+      DB_NAME: messaging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          pip install --upgrade pip
+          pip install -r messaging_app/requirements.txt
+          pip install flake8 pytest-cov
+
+      - name: Run flake8 linting
+        run: |
+          . venv/bin/activate
+          flake8 messaging_app/
+
+      - name: Run migrations
+        run: |
+          . venv/bin/activate
+          python messaging_app/manage.py migrate --noinput
+
+      - name: Run tests with coverage
+        run: |
+          . venv/bin/activate
+          pytest messaging_app/messaging_app/tests \
+            --cov=messaging_app \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=reports/results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: reports/results.xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: htmlcov
+
